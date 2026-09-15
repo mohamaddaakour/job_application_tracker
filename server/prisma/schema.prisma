@@ -14,6 +14,8 @@ model User {
   applications JobApplication[]
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
+  @@map("users")
 }
 
 enum ApplicationStatus {
@@ -39,4 +41,5 @@ model JobApplication {
   updatedAt DateTime          @updatedAt
 
   @@index([userId])
+  @@map("job_applications")
 }
