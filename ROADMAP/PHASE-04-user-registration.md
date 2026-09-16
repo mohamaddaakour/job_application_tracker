@@ -1,5 +1,10 @@
 # Phase 04 — User Registration
 
+> **As built (review 2026-09-16):** you replaced Step 7's `defineProperty` approach with
+> `req.validated` + `validated(schema, req)` (overview D16), and your schemas no longer
+> declare `query`/`params`. Both are sound. Step 8 (malformed JSON → 400) was **not yet
+> applied** at review time. Tables were also renamed via `@@map` (overview D17).
+
 **Goal:** `POST /api/auth/register` safely creates a user with a bcrypt-hashed password
 and returns clean 201 / 400 / 409 responses.
 

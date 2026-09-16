@@ -35,7 +35,7 @@ This is an **existing repository**. The roadmap continues from its real state.
 | Layering | `routes → controllers → services → prisma` with `asyncHandler`, `AppError`, central `errorHandler`, generic `validate(schema)` middleware. |
 | Health | `GET /api/health` runs through every layer and queries the database. |
 | Database | PostgreSQL on `localhost:5432`, database `job_application_db`; Prisma 7.10 with `@prisma/adapter-pg`; one migration `20260912141521_init`; `prisma migrate status` reports up to date. |
-| Schema | `User (id uuid, email unique, passwordHash, name, timestamps)` 1—* `JobApplication (company, position, location?, jobUrl?, status enum default APPLIED, appliedAt, notes?, userId FK onDelete Cascade, timestamps, @@index([userId]))`. |
+| Schema (tables `users`, `job_applications` since Phase 04 — see D17) | `User (id uuid, email unique, passwordHash, name, timestamps)` 1—* `JobApplication (company, position, location?, jobUrl?, status enum default APPLIED, appliedAt, notes?, userId FK onDelete Cascade, timestamps, @@index([userId]))`. |
 | Auth groundwork | `utils/hash.ts` (bcrypt, 10 rounds: `hash`, `comparePassword`), `utils/jwt.ts` (sign/verify access and refresh tokens, separate secrets) — committed. `schemas/auth.schema.ts` and `types/express.d.ts` — written, not yet committed. |
 | Env | `server/.env` has `NODE_ENV, PORT, CLIENT_URL, DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN`. |
 | Client | Vite 8 + React 19.2 + TypeScript ~6.0 + Tailwind 4.3 (via `@tailwindcss/vite`) + ESLint. One placeholder `App.tsx`. `VITE_API_URL=http://localhost:4000/api`. |
@@ -45,7 +45,7 @@ This is an **existing repository**. The roadmap continues from its real state.
 
 | # | Problem | Evidence | Fixed in |
 | - | --- | --- | --- |
-| P1 | `validate()` crashes on **every valid request**. Express 5 defines `req.query` as a getter with no setter, so `req.query = parsed.query` throws `TypeError: Cannot set property query of #<IncomingMessage> which has only a getter`, which becomes a 500. | Reproduced against the installed Express 5.2.1. | Phase 04 |
+| P1 | `validate()` crashes on **every valid request**. Express 5 defines `req.query` as a getter with no setter, so `req.query = parsed.query` throws `TypeError: Cannot set property query of #<IncomingMessage> which has only a getter`, which becomes a 500. | Reproduced against the installed Express 5.2.1. | Phase 04 ✅ (fixed with D16, commit `36e4165`) |
 | P2 | Malformed JSON bodies return **500** instead of 400, and `console.error` prints the raw body (it could contain a password). | Reproduced: `SyntaxError … type: 'entity.parse.failed'` → 500. | Phase 04 |
 | P3 | `auth.schema.ts` does not normalise email (so `Alice@x.com` and `alice@x.com` become two accounts). It uses the Zod-4-deprecated `z.string().email()`. It does not stop passwords longer than 72 bytes, which bcrypt silently truncates. | Code reading plus the bcrypt README. | Phase 04 |
 | P4 | `jwt.verify` does not pin the algorithm; `env.ts` does not check that the JWT secrets are strong or different from each other. | Code reading. | Phase 05 |
@@ -111,6 +111,8 @@ This is an **existing repository**. The roadmap continues from its real state.
 | D12 | Native `fetch` wrapper, no axios. | One small file holds the token and refresh logic; one less dependency. |
 | D13 | Vite dev proxy `/api → http://localhost:4000`; in production Express serves the built client from the same origin. | Same-origin in dev and prod: `SameSite=Lax` cookies work, no production CORS, dev/prod parity. The existing `cors` setup stays harmless until it is revisited in 24. |
 | D14 | Backend tests: Vitest + Supertest against a **real** PostgreSQL test database (`job_application_db_test`). Frontend tests: Vitest + React Testing Library + MSW. | Ownership and constraint behaviour is best proven against the real database; MSW mocks the network boundary, not our code. |
+| D16 | **As built in Phase 04 (your design):** `validate(schema)` passes the schema only the request sections it declares and stores the parsed result on `req.validated`. Handlers read it with `validated(schema, req)`. `req.body`, `req.query` and `req.params` stay raw. | Avoids the Express 5 getter problem without overriding a property. Rules for every later phase: (1) handlers never read `req.body`/`req.query`/`req.params` directly on validated routes; (2) exactly **one** `validate()` per route — a second call would overwrite `req.validated`, so combine `params` + `body` in one schema (Phase 10); (3) pass `validated()` the same schema used in `validate()`, because the type is a cast. |
+| D17 | Tables are mapped to snake_case plural names (`users`, `job_applications`) via `@@map`; model names in code stay `User`/`JobApplication`. Migration `20260915111559_name_tables` recreated the tables (dev data was dropped). | Your choice, commit `36e4165`. Only matters for raw SQL and `psql`. Lesson for production: edit a generated drop/create migration into `ALTER TABLE … RENAME TO …` to keep data. |
 | D15 | Rate limiting with `express-rate-limit` on auth routes; an `Origin` check on cookie-authenticated endpoints. `helmet` arrives with production HTML serving in 24. | Brute force is a real threat as soon as login exists; helmet's headers mostly matter once we serve HTML. |
 
 ---
