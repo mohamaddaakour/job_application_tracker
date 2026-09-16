@@ -2,8 +2,11 @@
 
 > **As built (review 2026-09-16):** you replaced Step 7's `defineProperty` approach with
 > `req.validated` + `validated(schema, req)` (overview D16), and your schemas no longer
-> declare `query`/`params`. Both are sound. Step 8 (malformed JSON → 400) was **not yet
-> applied** at review time. Tables were also renamed via `@@map` (overview D17).
+> declare `query`/`params`. Both are sound. Tables were also renamed via `@@map`
+> (overview D17). Step 8 was applied in commit `e871505`.
+>
+> **✅ Phase 04 complete (2026-09-16):** `tsc --noEmit` clean; verification checks 1–9 all
+> passed against the running API (check 8 by reading the stored rows directly).
 
 **Goal:** `POST /api/auth/register` safely creates a user with a bcrypt-hashed password
 and returns clean 201 / 400 / 409 responses.

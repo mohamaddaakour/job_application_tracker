@@ -1,6 +1,6 @@
 # Job Application Tracker — Roadmap Overview
 
-> Status: **Phase 04 is current.** Phases 01–03 are complete in the repository.
+> Status: **Phase 05 is next.** Phases 01–04 are complete in the repository.
 > Only the current phase has a detailed document. Future phase documents are
 > written when you say you are ready for them.
 
@@ -46,7 +46,7 @@ This is an **existing repository**. The roadmap continues from its real state.
 | # | Problem | Evidence | Fixed in |
 | - | --- | --- | --- |
 | P1 | `validate()` crashes on **every valid request**. Express 5 defines `req.query` as a getter with no setter, so `req.query = parsed.query` throws `TypeError: Cannot set property query of #<IncomingMessage> which has only a getter`, which becomes a 500. | Reproduced against the installed Express 5.2.1. | Phase 04 ✅ (fixed with D16, commit `36e4165`) |
-| P2 | Malformed JSON bodies return **500** instead of 400, and `console.error` prints the raw body (it could contain a password). | Reproduced: `SyntaxError … type: 'entity.parse.failed'` → 500. | Phase 04 |
+| P2 | Malformed JSON bodies return **500** instead of 400, and `console.error` prints the raw body (it could contain a password). | Reproduced: `SyntaxError … type: 'entity.parse.failed'` → 500. | Phase 04 ✅ (`e871505`) |
 | P3 | `auth.schema.ts` does not normalise email (so `Alice@x.com` and `alice@x.com` become two accounts). It uses the Zod-4-deprecated `z.string().email()`. It does not stop passwords longer than 72 bytes, which bcrypt silently truncates. | Code reading plus the bcrypt README. | Phase 04 |
 | P4 | `jwt.verify` does not pin the algorithm; `env.ts` does not check that the JWT secrets are strong or different from each other. | Code reading. | Phase 05 |
 | P5 | `GET /api/health` is public and returns `userCount`, which leaks business information to anyone. | Code reading. | Phase 07 |
@@ -198,7 +198,7 @@ Each phase targets roughly 30–90 minutes and ends in something you can run and
 | 01 | Project setup | Scaffold server and client | TS/ESM toolchain, Vite + Tailwind | `npm run dev` in both packages | Nothing existed | ✅ done (commit `b12935b`, no doc) |
 | 02 | Database & Prisma | Model User 1—* JobApplication | Prisma schema, migrations | `prisma migrate status` up to date | No persistence | ✅ done (in `b12935b`, no doc) |
 | 03 | Express architecture | Layer the backend | routes→controllers→services, central errors | `GET /api/health` hits the DB | Unstructured handlers | ✅ done (commit `242db06`, no doc) |
-| 04 | User registration | Create accounts safely | Password hashing in the sign-up flow; request validation at the boundary (incl. the Express 5 fix) | `POST /api/auth/register` → 201; 400/409 errors; bcrypt hash visible in Prisma Studio | No way to create users; `validate()` crashes (P1–P3) | **▶ current** — [PHASE-04-user-registration.md](PHASE-04-user-registration.md) |
+| 04 | User registration | Create accounts safely | Password hashing in the sign-up flow; request validation at the boundary (incl. the Express 5 fix) | `POST /api/auth/register` → 201; 400/409 errors; bcrypt hash visible in Prisma Studio | No way to create users; `validate()` crashes (P1–P3) | ✅ done (commits `36e4165`, `e871505`) — [PHASE-04-user-registration.md](PHASE-04-user-registration.md) |
 | 05 | Login & access tokens | Prove identity per request | JWT access tokens; authentication middleware (coupled: a token nobody checks is useless) | `POST /api/auth/login` → accessToken; `GET /api/auth/me` 200 with Bearer, 401 without | The server cannot tell who is calling (P4) | pending |
 | 06 | Refresh tokens & logout | Long sessions that can be ended | httpOnly cookies; rotation + `tokenVersion` revocation (migration) | `POST /api/auth/refresh` rotates the cookie; after `logout`, the old cookie → 401 | 15-min sessions; logout that does not revoke | pending |
 | 07 | Auth abuse protection | Resist brute force and CSRF | Rate limiting; `Origin` checks for cookie endpoints | 6th rapid failed login → 429; foreign Origin on refresh → 403; health no longer leaks counts | Password guessing, cross-site requests (P5) | pending |
