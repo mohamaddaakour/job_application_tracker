@@ -7,6 +7,9 @@ function isMalformedJsonError(err: unknown): boolean {
   return err instanceof SyntaxError && 'type' in err && err.type === 'entity.parse.failed';
 }
 
+// Express global error-handling middleware (because it takes error, request, response and next as parameters).
+// Its job is to catch errors that occur anywhere in your application
+// and turn them into appropriate HTTP responses.
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
@@ -39,7 +42,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     });
   }
 
-  console.error(err);
   return res.status(500).json({
     error: {
       message: 'Internal server error',
